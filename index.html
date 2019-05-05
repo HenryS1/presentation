@@ -1,3 +1,394 @@
-<div>
-HELLO WORLD!
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Generating data with Hypothesis</title>
+<meta name="author" content="(Henry Steere)"/>
+<style type="text/css">
+.underline { text-decoration: underline; }
+</style>
+<link rel="stylesheet" href="./css/reveal.css"/>
+
+<link rel="stylesheet" href="./css/theme/night.css" id="theme"/>
+
+
+<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+<script>
+    if( window.location.search.match( /print-pdf/gi ) ) {
+        var link = document.createElement( 'link' );
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = './css/print/pdf.css';
+        document.getElementsByTagName( 'head' )[0].appendChild( link );
+    }
+</script>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide"><h1 class="title">Generating data with Hypothesis</h1><h2 class="author">Henry Steere</h2>
+</section>
+
+
+<section>
+<section id="slide-orge45aacf">
+<h2 id="orge45aacf">Property based testing</h2>
+<ul>
+<li>Identify a universal property</li>
+<li>Generate data and check your property</li>
+<li>Repeat many times and find bugs</li>
+
+</ul>
+
+</section>
+<section id="slide-org776174c">
+<h3 id="org776174c">An easy example</h3>
+<p>
+For all integers <code>n</code>, <code>abs(n) &gt;= 0</code> 
+</p>
+
+<div class="org-src-container">
+
+<pre  class="src src-python"><span style="color: #51afef;">from</span> hypothesis <span style="color: #51afef;">import</span> strategies <span style="color: #51afef;">as</span> st
+<span style="color: #51afef;">from</span> unittest <span style="color: #51afef;">import</span> TestCase
+
+<span style="color: #51afef;">class</span> <span style="color: #FCCE7B;">TestAbs</span>(TestCase):
+
+    <span style="color: #FCCE7B;">@given</span>(st.integers())
+    <span style="color: #51afef;">def</span> <span style="color: #5cEfFF;">test_abs_n_is_non_negative</span>(<span style="color: #51afef;">self</span>, n):
+        <span style="color: #51afef;">assert</span> <span style="color: #C57BDB;">abs</span>(n) &gt;= 0
+</pre>
 </div>
+
+</section>
+<section id="slide-org6b3370b">
+<h3 id="org6b3370b">Generating your own data</h3>
+<ul>
+<li>Start with builtin strategies</li>
+<li>Customise and combine with <code class="src src-python"><span style="color: #C57BDB;">map</span>, flatmap</code>
+and <code class="src src-python"><span style="color: #FCCE7B;">@composite</span></code></li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgb4189b6">
+<h2 id="orgb4189b6">Builtins</h2>
+<div class="outline-text-2" id="text-orgb4189b6">
+</div>
+</section>
+<section id="slide-org35c8f69">
+<h3 id="org35c8f69">Scalars and collections</h3>
+<ul>
+<li><code>integers(), lists(), sets(), dicts(), booleans(),</code> etc</li>
+<li>Use these as building blocks</li>
+
+</ul>
+
+</section>
+<section id="slide-orgd88bbe9">
+<h3 id="orgd88bbe9">Configure them</h3>
+<ul>
+<li>Often you need to limit size, or range of values</li>
+<li>Collections can be configured with <code>min_size</code> and <code>max_size</code></li>
+<li>Scalars can be configured with <code>min_value</code> and <code>max_value</code></li>
+
+</ul>
+
+</section>
+</section>
+<section>
+<section id="slide-orgae96992">
+<h2 id="orgae96992">Debugging</h2>
+<div class="outline-text-2" id="text-orgae96992">
+</div>
+</section>
+<section id="slide-org0b5c772">
+<h3 id="org0b5c772">Inspect generated data</h3>
+<p>
+Use <code>.example()</code> on strategies 
+</p>
+
+<div class="org-src-container">
+
+<pre  class="src src-python"><span style="color: #51afef;">from</span> hypothesis <span style="color: #51afef;">import</span> strategies <span style="color: #51afef;">as</span> st
+
+<span style="color: #DFDFDF;">positive_integers</span> = st.integers(min_value = 1)
+
+&gt;&gt;&gt; positive_integers.example()
+573
+</pre>
+</div>
+
+</section>
+<section id="slide-orge5499d7">
+<h3 id="orge5499d7">Find examples</h3>
+<div class="org-src-container">
+
+<pre  class="src src-python"><span style="color: #51afef;">from</span> hypothesis <span style="color: #51afef;">import</span> strategies <span style="color: #51afef;">as</span> st
+
+<span style="color: #DFDFDF;">bounded_integers</span> = st.integers(min_value = 20, max_value = 50)
+
+<span style="color: #62686E;"># </span><span style="color: #62686E;">find a bounded integer bigger than 30</span>
+&gt;&gt;&gt; find(bounded_integers, <span style="color: #51afef;">lambda</span> n: n &gt; 30)
+31
+</pre>
+</div>
+
+</section>
+<section id="slide-org0338cf3">
+<h3 id="org0338cf3">Sometimes it's not possible</h3>
+<div class="org-src-container">
+
+<pre  class="src src-python">&gt;&gt;&gt; find(bounded_integers, <span style="color: #51afef;">lambda</span> i: i &lt; 1)
+Traceback (most recent call last):
+  File <span style="color: #7bc275;">"&lt;stdin&gt;"</span>, line 1, <span style="color: #51afef;">in</span> &lt;module&gt;
+  File <span style="color: #7bc275;">"/virtualenvs/IhbL9k3x/lib/python3.7/site-packages/hypothesis/core.py"</span>, line 1128, <span style="color: #51afef;">in</span> find
+    <span style="color: #51afef;">raise</span> NoSuchExample(get_pretty_function_description(condition))
+hypothesis.errors.NoSuchExample: No examples found of condition <span style="color: #51afef;">lambda</span> i: &lt;unknown&gt;
+</pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-org4c0bbe3">
+<h2 id="org4c0bbe3">Strategies are a Monad</h2>
+<div class="outline-text-2" id="text-org4c0bbe3">
+</div>
+</section>
+<section id="slide-orgb1c6202">
+<h3 id="orgb1c6202">just, map and flatmap</h3>
+<p>
+Monads are boxes with values inside 
+</p>
+<ul>
+<li>Put a value in the box with <code>just()</code></li>
+<li>Change  values in the box with <code class="src src-python"><span style="color: #C57BDB;">map</span></code></li>
+<li>Chain strategies with <code class="src src-python">flatmap</code></li>
+
+</ul>
+
+</section>
+<section id="slide-org5c8d428">
+<h3 id="org5c8d428">just</h3>
+<p>
+Not used much, but required for a monad
+</p>
+
+<div class="org-src-container">
+
+<pre  class="src src-python"><span style="color: #51afef;">from</span> hypothesis <span style="color: #51afef;">import</span> strategies <span style="color: #51afef;">as</span> st
+
+<span style="color: #DFDFDF;">just_ten</span> = st.just(10)
+
+&gt;&gt;&gt; just_ten.example()
+10
+</pre>
+</div>
+
+</section>
+<section id="slide-org8218f84">
+<h3 id="org8218f84">map</h3>
+<p>
+A subset of the fibonacci numbers
+</p>
+
+<div class="org-src-container">
+
+<pre  class="src src-python"><span style="color: #51afef;">from</span> hypothesis <span style="color: #51afef;">import</span> strategies <span style="color: #51afef;">as</span> st
+<span style="color: #51afef;">from</span> .fibonacci <span style="color: #51afef;">import</span> nth_fibonacci
+
+<span style="color: #DFDFDF;">fibonacci_numbers</span> = st.integers(min_value = 50, max_value = 100).<span style="color: #C57BDB;">map</span>(nth_fibonacci)
+</pre>
+</div>
+
+</section>
+<section id="slide-org7400d06">
+<h3 id="org7400d06">flatmap</h3>
+<p>
+Multiples of fibonacci numbers
+</p>
+
+<div class="org-src-container">
+
+<pre  class="src src-python"><span style="color: #DFDFDF;">multiples_of_n</span> = <span style="color: #51afef;">lambda</span> n: st.integers().<span style="color: #C57BDB;">map</span>(<span style="color: #51afef;">lambda</span> k: k * n)
+
+<span style="color: #DFDFDF;">fibonacci_multiples</span> = fibonacci_numbers
+  .flatmap(multiples_of_n) 
+</pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-org97ef3a5">
+<h2 id="org97ef3a5"><code class="src src-python"><span style="color: #FCCE7B;">@composite</span></code></h2>
+<div class="outline-text-2" id="text-org97ef3a5">
+</div>
+</section>
+<section id="slide-org2ca6505">
+<h3 id="org2ca6505"><code class="src src-python"><span style="color: #FCCE7B;">@composite</span></code> syntax</h3>
+<ul>
+<li>Decorate a function with <code class="src src-python"><span style="color: #FCCE7B;">@composite</span></code></li>
+<li>Use draw to extract values from strategies</li>
+<li>Generate what's returned in the function</li>
+
+</ul>
+
+</section>
+<section id="slide-org843607d">
+<h3 id="org843607d">Fibonacci multiples again</h3>
+<div class="org-src-container">
+
+<pre  class="src src-python"><span style="color: #51afef;">from</span> .fibonacci <span style="color: #51afef;">import</span> nth_fibonacci
+<span style="color: #51afef;">from</span> hypothesis.strategies <span style="color: #51afef;">import</span> composite
+<span style="color: #51afef;">from</span> hypothesis <span style="color: #51afef;">import</span> strategies <span style="color: #51afef;">as</span> st
+
+<span style="color: #FCCE7B;">@composite</span>
+<span style="color: #51afef;">def</span> <span style="color: #5cEfFF;">fibonacci_multiples</span>(draw):
+
+    <span style="color: #DFDFDF;">n</span> = draw(st.integers(min_value = 50, max_value = 100))
+    <span style="color: #DFDFDF;">fib</span> = nth_fibonacci(n)
+    <span style="color: #DFDFDF;">k</span> = draw(st.integers())
+
+    <span style="color: #51afef;">return</span> k * fib
+</pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-org7cae681">
+<h2 id="org7cae681">Data science and Hypothesis</h2>
+<div class="outline-text-2" id="text-org7cae681">
+</div>
+</section>
+<section id="slide-org7193af0">
+<h3 id="org7193af0">Numpy strategies</h3>
+<ul>
+<li>Import from <code>hypothesis.extra.numpy</code></li>
+<li>Specify <code>dtype</code>, <code>shape</code> for <code>arrays()</code></li>
+<li>Or generate arbitrary <code>array_shapes()</code> and <code>dtypes</code></li>
+<li>Can also specify <code>elements</code> strategy for <code>arrays()</code></li>
+
+</ul>
+
+</section>
+<section id="slide-org9392cdd">
+<h3 id="org9392cdd">Arrays</h3>
+<p>
+Arrays with length 10 that have any numpy scalar data type
+</p>
+
+<div class="org-src-container">
+
+<pre  class="src src-python"><span style="color: #51afef;">from</span> hypothesis.extra.numpy <span style="color: #51afef;">import</span> arrays, scalar_dtypes
+
+arrays(dtype = scalar_dtypes(), shape = 10)
+</pre>
+</div>
+
+</section>
+<section id="slide-org2df8e4a">
+<h3 id="org2df8e4a">Pandas strategies</h3>
+<ul>
+<li>Import from <code>hypothesis.extra.pandas</code></li>
+<li>Generate <code>Series</code> with <code>dtype</code>, <code>elements</code> and <code>index</code></li>
+<li>Generate <code>DataFrames</code> row wise or column wise</li>
+
+</ul>
+
+</section>
+<section id="slide-org58f0a89">
+<h3 id="org58f0a89"><code>Series</code></h3>
+<p>
+A series with int8 elements
+</p>
+<div class="org-src-container">
+
+<pre  class="src src-python"><span style="color: #51afef;">from</span> hypothesis.extra.pandas <span style="color: #51afef;">import</span> series
+<span style="color: #51afef;">import</span> numpy <span style="color: #51afef;">as</span> np
+
+series(dtype=np.int8)
+</pre>
+</div>
+
+</section>
+<section id="slide-orgc914098">
+<h3 id="orgc914098"><code>DataFrames</code></h3>
+<p>
+Day of the week and total likes
+</p>
+
+<div class="org-src-container">
+
+<pre  class="src src-python"><span style="color: #51afef;">from</span> hypothesis.extra.pandas <span style="color: #51afef;">import</span> column, data_frames
+<span style="color: #51afef;">from</span> hypothesis <span style="color: #51afef;">import</span> strategies <span style="color: #51afef;">as</span> st
+
+<span style="color: #DFDFDF;">weekdays_list</span> = [<span style="color: #7bc275;">'monday'</span>, <span style="color: #7bc275;">'tuesday'</span>, <span style="color: #7bc275;">'wednesday'</span>, <span style="color: #7bc275;">'thursday'</span>, 
+                 <span style="color: #7bc275;">'friday'</span>, <span style="color: #7bc275;">'saturday'</span>, <span style="color: #7bc275;">'sunday'</span>]
+<span style="color: #DFDFDF;">weekdays</span> = column(<span style="color: #7bc275;">'weekdays'</span>, 
+     elements = st.sampled_from(weekdays_list))
+<span style="color: #DFDFDF;">likes</span> = column(<span style="color: #7bc275;">'likes'</span>,
+     st.integers(min_value = 0, max_value = 30))
+
+<span style="color: #DFDFDF;">likes_by_weekday</span> = data_frames(columns = [weekdays, likes])
+</pre>
+</div>
+
+</section>
+</section>
+<section>
+<section id="slide-org428a6a2">
+<h2 id="org428a6a2">Summary</h2>
+<ul>
+<li>Start with builtins</li>
+<li>Transform and chain with map and flatmap</li>
+<li>Use <code class="src src-python"><span style="color: #FCCE7B;">@composite</span></code> for complicated strategies</li>
+<li>Generate numpy arrays</li>
+<li>Generate pandas DataFrames and Series</li>
+
+</ul>
+</section>
+</section>
+</div>
+</div>
+<script src="./lib/js/head.min.js"></script>
+<script src="./js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: false,
+center: true,
+slideNumber: 'c',
+rollingLinks: false,
+keyboard: true,
+overview: true,
+
+theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+transitionSpeed: 'default',
+multiplex: {
+    secret: '', // null if client
+    id: '', // id, obtained from socket.io server
+    url: '' // Location of socket.io server
+},
+
+// Optional libraries used to extend on reveal.js
+dependencies: [
+ { src: './lib/js/classList.js', condition: function() { return !document.body.classList; } },
+ { src: './plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: './plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+ { src: './plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+ { src: './plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }]
+});
+</script>
+</body>
+</html>
